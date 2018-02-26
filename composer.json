@@ -1,0 +1,21 @@
+{
+  "name": "therezor/laravel-transactional-jobs",
+  "description": "Sumbit laravel jobs inside transaction. Cancel job after rollback. Proceed after successful commit.",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": "^7.0",
+    "laravel/framework": "5.5.* || 5.6.*"
+  },
+  "authors": [
+    {
+      "name": "Roman Nagirnyi",
+      "email": "rnagirnyi@smartcats.pro"
+    }
+  ],
+  "autoload": {
+    "psr-0": {
+      "TheRezor\\TransactionalJobs\\": "src/"
+    }
+  }
+}
