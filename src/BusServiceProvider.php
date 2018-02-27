@@ -2,7 +2,6 @@
 
 namespace TheRezor\TransactionalJobs;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Bus\Dispatcher as DispatcherContract;
 use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
@@ -10,6 +9,13 @@ use Illuminate\Contracts\Bus\QueueingDispatcher as QueueingDispatcherContract;
 
 class BusServiceProvider extends ServiceProvider
 {
+    /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = true;
+
     /**
      * Register the service provider.
      *
@@ -30,9 +36,20 @@ class BusServiceProvider extends ServiceProvider
         $this->app->alias(
             TransactionalDispatcher::class, QueueingDispatcherContract::class
         );
+    }
 
-        $this->app->afterResolving('db', function ($db, Application $app) {
-            $app->make(TransactionalDispatcher::class);
-        });
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [
+            TransactionalDispatcher::class,
+            DispatcherContract::class,
+            QueueingDispatcherContract::class,
+        ];
     }
 }
+
