@@ -17,5 +17,12 @@
     "psr-4": {
       "TheRezor\\TransactionalJobs\\": "src/"
     }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "TheRezor\\TransactionalJobs\\BusServiceProvider"
+      ]
+    }
   }
 }
