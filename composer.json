@@ -1,6 +1,6 @@
 {
   "name": "therezor/laravel-transactional-jobs",
-  "description": "Sumbit laravel jobs inside transaction. Cancel job after rollback. Proceed after successful commit.",
+  "description": "Submit laravel jobs inside transaction. Cancel job after rollback. Proceed after successful commit.",
   "type": "library",
   "license": "MIT",
   "require": {
@@ -14,8 +14,15 @@
     }
   ],
   "autoload": {
-    "psr-0": {
+    "psr-4": {
       "TheRezor\\TransactionalJobs\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "TheRezor\\TransactionalJobs\\BusServiceProvider"
+      ]
     }
   }
 }
