@@ -9,6 +9,8 @@ use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
+use Illuminate\Queue\NullQueue;
+use Illuminate\Queue\SyncQueue;
 
 class TransactionalDispatcher extends Dispatcher
 {
@@ -40,6 +42,14 @@ class TransactionalDispatcher extends Dispatcher
     {
         // Dispatch immediately if no transactions was opened during job
         if (empty($command->afterTransactions) || 0 === $this->db->transactionLevel()) {
+            return parent::dispatchToQueue($command);
+        }
+
+        $connection = $command->connection ?? null;
+
+        $queue = call_user_func($this->queueResolver, $connection);
+
+        if ($queue instanceof NullQueue || $queue instanceof SyncQueue) {
             return parent::dispatchToQueue($command);
         }
 
