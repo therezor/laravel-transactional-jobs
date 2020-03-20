@@ -2,20 +2,14 @@
 
 namespace TheRezor\TransactionalJobs;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Bus\Dispatcher as DispatcherContract;
-use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
 use Illuminate\Contracts\Bus\QueueingDispatcher as QueueingDispatcherContract;
+use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
+use Illuminate\Contracts\Support\DeferrableProvider;
+use Illuminate\Support\ServiceProvider;
 
-class BusServiceProvider extends ServiceProvider
+class BusServiceProvider extends ServiceProvider implements DeferrableProvider
 {
-    /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = true;
-
     /**
      * Register the service provider.
      *
@@ -52,4 +46,3 @@ class BusServiceProvider extends ServiceProvider
         ];
     }
 }
-
