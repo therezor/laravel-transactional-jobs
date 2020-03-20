@@ -5,16 +5,16 @@ Dispatch jobs inside transactions. Cancel job on transaction rollback. Add to qu
 
 1) Run ```composer require therezor/laravel-transactional-jobs``` in your laravel project root folder
 
-2) Add `public $afterTransactions = true;` property to jobs that runs in the middle of transactions
+2) Implement `TheRezor\TransactionalJobs\Contracts\TransactionalJob` to jobs that runs in the middle of transactions
 
 ```php
 <?php
 
-class MySuperJob implements ShouldQueue
+use TheRezor\TransactionalJobs\Contracts\TransactionalJob;
+
+class MySuperJob implements ShouldQueue, TransactionalJob
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public $afterTransactions = true;
     
     ...
 }
