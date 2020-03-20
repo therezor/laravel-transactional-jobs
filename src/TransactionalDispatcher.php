@@ -5,12 +5,13 @@ namespace TheRezor\TransactionalJobs;
 use Closure;
 use Illuminate\Bus\Dispatcher;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
-use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
 use Illuminate\Queue\NullQueue;
 use Illuminate\Queue\SyncQueue;
+use TheRezor\TransactionalJobs\Contracts\TransactionalJob;
 
 class TransactionalDispatcher extends Dispatcher
 {
@@ -41,7 +42,7 @@ class TransactionalDispatcher extends Dispatcher
     public function dispatchToQueue($command)
     {
         // Dispatch immediately if no transactions was opened during job
-        if (empty($command->afterTransactions) || 0 === $this->db->transactionLevel()) {
+        if (!($command instanceof TransactionalJob) || 0 === $this->db->transactionLevel()) {
             return parent::dispatchToQueue($command);
         }
 
