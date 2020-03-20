@@ -4,8 +4,9 @@
   "type": "library",
   "license": "MIT",
   "require": {
-    "php": "^7.0",
-    "laravel/framework": "^5.5|^6.0"
+    "php": "^7.1",
+    "laravel/framework": "^5.8|^6.0|^7.0",
+    "loophp/phptree": "^2.5"
   },
   "authors": [
     {
@@ -24,5 +25,8 @@
         "TheRezor\\TransactionalJobs\\BusServiceProvider"
       ]
     }
+  },
+  "require-dev": {
+    "orchestra/testbench": "^5.1"
   }
 }

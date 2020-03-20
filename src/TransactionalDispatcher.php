@@ -4,91 +4,151 @@ namespace TheRezor\TransactionalJobs;
 
 use Closure;
 use Illuminate\Bus\Dispatcher;
-use Illuminate\Contracts\Container\Container;
-use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
-use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
-use Illuminate\Queue\NullQueue;
-use Illuminate\Queue\SyncQueue;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Event;
+use loophp\phptree\Node\ValueNode;
+use loophp\phptree\Node\ValueNodeInterface;
+use TheRezor\TransactionalJobs\Contracts\TransactionalJob;
 
 class TransactionalDispatcher extends Dispatcher
 {
     /**
+     * @var ValueNodeInterface
+     */
+    protected $currentTransaction;
+
+    /**
      * @var array
      */
-    protected $pendingCommands = [];
+    protected $pendingJobs;
 
     /**
-     * @var DispatcherContract
+     * @var int
      */
-    protected $eventDispatcher;
+    protected $cursor;
 
     /**
-     * @var DatabaseManager
+     * @return $this
      */
-    protected $db;
-
-    public function __construct(Container $container, Closure $queueResolver = null)
+    public function prepare(): self
     {
-        parent::__construct($container, $queueResolver);
+        $this->resetJobs();
+        $this->setupListeners();
 
-        $this->eventDispatcher = $container->make(DispatcherContract::class);
-        $this->db = $container->make('db');
-        $this->setUpTransactionListeners();
+        return $this;
     }
 
+    protected function resetJobs()
+    {
+        $this->pendingJobs = [];
+        $this->cursor = 0;
+    }
+
+    protected function setupListeners(): void
+    {
+        Event::listen(TransactionBeginning::class, function () {
+            $this->beginTransaction();
+        });
+
+        Event::listen(TransactionCommitted::class, function () {
+            $this->commitTransaction();
+        });
+
+        Event::listen(TransactionRolledBack::class, function () {
+            $this->rollbackTransaction();
+        });
+    }
+
+    public function beginTransaction(): void
+    {
+        $this->currentTransaction = tap(new ValueNode(new Collection()), function (ValueNodeInterface $node) {
+            if ($this->currentTransaction) {
+                $this->currentTransaction->add($node);
+            }
+        });
+    }
+
+    public function commitTransaction(): void
+    {
+        if ($this->finishCurrentTransaction()->isRoot()) {
+            $this->dispatchPendingCommands();
+        }
+    }
+
+    /**
+     * @return ValueNodeInterface
+     */
+    protected function finishCurrentTransaction(): ValueNodeInterface
+    {
+        return tap($this->currentTransaction, function (ValueNodeInterface $node) {
+            $this->currentTransaction = $node->getParent();
+        });
+    }
+
+    protected function dispatchPendingCommands(): void
+    {
+        $jobs = $this->pendingJobs;
+        $total = $this->cursor;
+        $this->resetJobs();
+
+        for ($i = 0; $i < $total; $i++) {
+            parent::dispatchToQueue($jobs[ $i ]);
+        }
+    }
+
+    public function rollbackTransaction(): void
+    {
+        $this->cursor -= $this->finishCurrentTransaction()->getValue()->count();
+    }
+
+    /**
+     * @param Closure $queueResolver
+     *
+     * @return $this
+     */
+    public function setQueueResolver(Closure $queueResolver): self
+    {
+        $this->queueResolver = $queueResolver;
+        return $this;
+    }
+
+    /**
+     * Dispatch a command to its appropriate handler behind a queue.
+     *
+     * @param mixed $command
+     *
+     * @return mixed|void
+     */
     public function dispatchToQueue($command)
     {
-        // Dispatch immediately if no transactions was opened during job
-        if (empty($command->afterTransactions) || 0 === $this->db->transactionLevel()) {
-            return parent::dispatchToQueue($command);
-        }
-
-        $connection = $command->connection ?? null;
-
-        $queue = call_user_func($this->queueResolver, $connection);
-
-        if ($queue instanceof NullQueue || $queue instanceof SyncQueue) {
-            return parent::dispatchToQueue($command);
-        }
-
-        // Add command to pending list
-        $this->pendingCommands[] = $command;
-
-        return null;
-    }
-
-    public function commitTransaction()
-    {
-        if (empty($this->pendingCommands) || $this->db->transactionLevel() > 0) {
+        if ($this->isTransactionalJob($command)) {
+            $this->addPendingJob($command);
             return;
         }
 
-        $this->dispatchPendingCommands();
+        return parent::dispatchToQueue($command);
     }
 
-    public function rollbackTransaction()
+    /**
+     * @param $command
+     *
+     * @return bool
+     */
+    protected function isTransactionalJob($command): bool
     {
-        $this->pendingCommands = [];
-    }
-
-    protected function dispatchPendingCommands()
-    {
-        foreach ($this->pendingCommands as $command) {
-            parent::dispatchToQueue($command);
+        if ($this->currentTransaction && $command instanceof TransactionalJob) {
+            return true;
         }
 
-        $this->pendingCommands = [];
+        return false;
     }
 
-    protected function setUpTransactionListeners()
+    protected function addPendingJob($command): void
     {
-        $this->eventDispatcher->listen(TransactionCommitted::class, function () {
-            $this->commitTransaction();
-        });
-        $this->eventDispatcher->listen(TransactionRolledBack::class, function () {
-            $this->rollbackTransaction();
-        });
+        $this->currentTransaction->getValue()->push($this->cursor);
+        $this->pendingJobs[ $this->cursor++ ] = $command;
     }
 }
