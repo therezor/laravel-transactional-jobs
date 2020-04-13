@@ -10,9 +10,9 @@ Dispatch jobs inside transactions. Cancel job on transaction rollback. Add to qu
 ```php
 <?php
 
-use TheRezor\TransactionalJobs\Contracts\TransactionalJob;
+use TheRezor\TransactionalJobs\Contracts\RunAfterTransaction;
 
-class MySuperJob implements ShouldQueue, TransactionalJob
+class MySuperJob implements ShouldQueue, RunAfterTransaction
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     
