@@ -20,11 +20,11 @@ class TransactionalDispatcherTest extends TestCase
         $this->dispatcher->dispatch(new class {
             public function handle()
             {
-                $_SERVER[ '_test_job_' ] = 'foo';
+                $_SERVER['_test_job_'] = 'foo';
             }
         });
 
-        $this->assertEquals('foo', $_SERVER[ '_test_job_' ]);
+        $this->assertEquals('foo', $_SERVER['_test_job_']);
     }
 
     public function test_only_dispatch_job_after_root_transaction_commit()
@@ -37,7 +37,7 @@ class TransactionalDispatcherTest extends TestCase
             $this->assertArrayNotHasKey('_test_job_', $_SERVER);
         });
 
-        $this->assertEquals('foo', $_SERVER[ '_test_job_' ]);
+        $this->assertEquals('foo', $_SERVER['_test_job_']);
     }
 
     public function test_should_clean_pending_jobs_after_root_transaction_commit()
@@ -47,7 +47,7 @@ class TransactionalDispatcherTest extends TestCase
         });
 
         DB::transaction(function () {
-            unset($_SERVER[ '_test_job_' ]);
+            unset($_SERVER['_test_job_']);
         });
 
         $this->assertArrayNotHasKey('_test_job_', $_SERVER);
@@ -75,12 +75,12 @@ class TransactionalDispatcherTest extends TestCase
         parent::setUp();
 
         $this->dispatcher = $this->app->make(TransactionalDispatcher::class);
-        unset($_SERVER[ '_test_job_' ]);
+        unset($_SERVER['_test_job_']);
     }
 
     protected function getPackageProviders($app)
     {
-        return [ BusServiceProvider::class ];
+        return [BusServiceProvider::class];
     }
 }
 
@@ -91,7 +91,7 @@ class TestJob implements ShouldQueue, RunAfterTransaction
     public function handle()
     {
         DB::transaction(function () {
-            $_SERVER[ '_test_job_' ] = 'foo';
+            $_SERVER['_test_job_'] = 'foo';
         });
     }
 }
