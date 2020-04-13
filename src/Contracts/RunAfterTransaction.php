@@ -2,6 +2,6 @@
 
 namespace TheRezor\TransactionalJobs\Contracts;
 
-interface TransactionalJob
+interface RunAfterTransaction
 {
 }

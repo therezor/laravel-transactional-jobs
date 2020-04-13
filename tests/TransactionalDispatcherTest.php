@@ -5,7 +5,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
 use Orchestra\Testbench\TestCase;
 use TheRezor\TransactionalJobs\BusServiceProvider;
-use TheRezor\TransactionalJobs\Contracts\TransactionalJob;
+use TheRezor\TransactionalJobs\Contracts\RunAfterTransaction;
 use TheRezor\TransactionalJobs\TransactionalDispatcher;
 
 class TransactionalDispatcherTest extends TestCase
@@ -84,7 +84,7 @@ class TransactionalDispatcherTest extends TestCase
     }
 }
 
-class TestJob implements ShouldQueue, TransactionalJob
+class TestJob implements ShouldQueue, RunAfterTransaction
 {
     use Dispatchable;
 

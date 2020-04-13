@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 use loophp\phptree\Node\ValueNode;
 use loophp\phptree\Node\ValueNodeInterface;
-use TheRezor\TransactionalJobs\Contracts\TransactionalJob;
+use TheRezor\TransactionalJobs\Contracts\RunAfterTransaction;
 
 class TransactionalDispatcher extends Dispatcher
 {
@@ -95,7 +95,7 @@ class TransactionalDispatcher extends Dispatcher
         $this->resetJobs();
 
         for ($i = 0; $i < $total; $i++) {
-            parent::dispatchToQueue($jobs[ $i ]);
+            parent::dispatchToQueue($jobs[$i]);
         }
     }
 
@@ -126,6 +126,7 @@ class TransactionalDispatcher extends Dispatcher
     {
         if ($this->isTransactionalJob($command)) {
             $this->addPendingJob($command);
+
             return;
         }
 
@@ -139,16 +140,12 @@ class TransactionalDispatcher extends Dispatcher
      */
     protected function isTransactionalJob($command): bool
     {
-        if ($this->currentTransaction && $command instanceof TransactionalJob) {
-            return true;
-        }
-
-        return false;
+        return $this->currentTransaction && ($command instanceof RunAfterTransaction || !empty($command->afterTransactions));
     }
 
     protected function addPendingJob($command): void
     {
         $this->currentTransaction->getValue()->push($this->cursor);
-        $this->pendingJobs[ $this->cursor++ ] = $command;
+        $this->pendingJobs[$this->cursor++] = $command;
     }
 }
