@@ -2,150 +2,72 @@
 
 namespace TheRezor\TransactionalJobs;
 
-use Closure;
 use Illuminate\Bus\Dispatcher;
-use Illuminate\Database\Events\TransactionBeginning;
-use Illuminate\Database\Events\TransactionCommitted;
-use Illuminate\Database\Events\TransactionRolledBack;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Event;
-use loophp\phptree\Node\ValueNode;
-use loophp\phptree\Node\ValueNodeInterface;
 use TheRezor\TransactionalJobs\Contracts\RunAfterTransaction;
 
 class TransactionalDispatcher extends Dispatcher
 {
-    /**
-     * @var ValueNodeInterface
-     */
-    protected $currentTransaction;
+    protected $transactionLevel = 0;
 
-    /**
-     * @var array
-     */
-    protected $pendingJobs;
-
-    /**
-     * @var int
-     */
-    protected $cursor;
-
-    /**
-     * @return $this
-     */
-    public function prepare(): self
-    {
-        $this->resetJobs();
-        $this->setupListeners();
-
-        return $this;
-    }
-
-    protected function resetJobs()
-    {
-        $this->pendingJobs = [];
-        $this->cursor = 0;
-    }
-
-    protected function setupListeners(): void
-    {
-        Event::listen(TransactionBeginning::class, function () {
-            $this->beginTransaction();
-        });
-
-        Event::listen(TransactionCommitted::class, function () {
-            $this->commitTransaction();
-        });
-
-        Event::listen(TransactionRolledBack::class, function () {
-            $this->rollbackTransaction();
-        });
-    }
+    protected $pendingCommands = [];
 
     public function beginTransaction(): void
     {
-        $this->currentTransaction = tap(new ValueNode(new Collection()), function (ValueNodeInterface $node) {
-            if ($this->currentTransaction) {
-                $this->currentTransaction->add($node);
-            }
-        });
+        $this->transactionLevel++;
+        $this->pendingCommands[$this->transactionLevel] = [];
     }
 
     public function commitTransaction(): void
     {
-        if ($this->finishCurrentTransaction()->isRoot()) {
-            $this->dispatchPendingCommands();
+        $pendingCommands = $this->finishCurrentTransaction();
+        if (0 === $this->transactionLevel) {
+            foreach ($pendingCommands as $command) {
+                parent::dispatchToQueue($command);
+            }
+
+            return;
         }
-    }
 
-    /**
-     * @return ValueNodeInterface
-     */
-    protected function finishCurrentTransaction(): ValueNodeInterface
-    {
-        return tap($this->currentTransaction, function (ValueNodeInterface $node) {
-            $this->currentTransaction = $node->getParent();
-        });
-    }
-
-    protected function dispatchPendingCommands(): void
-    {
-        $jobs = $this->pendingJobs;
-        $total = $this->cursor;
-        $this->resetJobs();
-
-        for ($i = 0; $i < $total; $i++) {
-            parent::dispatchToQueue($jobs[$i]);
-        }
+        $this->pendingCommands[$this->transactionLevel] = array_merge(
+            $this->pendingCommands[$this->transactionLevel],
+            $pendingCommands
+        );
     }
 
     public function rollbackTransaction(): void
     {
-        $this->cursor -= $this->finishCurrentTransaction()->getValue()->count();
+        $this->finishCurrentTransaction();
     }
 
-    /**
-     * @param Closure $queueResolver
-     *
-     * @return $this
-     */
-    public function setQueueResolver(Closure $queueResolver): self
+    protected function finishCurrentTransaction(): array
     {
-        $this->queueResolver = $queueResolver;
-        return $this;
+        $pendingCommands = $this->pendingCommands[$this->transactionLevel];
+
+        unset($this->pendingCommands[$this->transactionLevel]);
+
+        $this->transactionLevel--;
+
+        return $pendingCommands;
     }
 
-    /**
-     * Dispatch a command to its appropriate handler behind a queue.
-     *
-     * @param mixed $command
-     *
-     * @return mixed|void
-     */
     public function dispatchToQueue($command)
     {
         if ($this->isTransactionalJob($command)) {
-            $this->addPendingJob($command);
+            $this->addPendingCommand($command);
 
-            return;
+            return null;
         }
 
         return parent::dispatchToQueue($command);
     }
 
-    /**
-     * @param $command
-     *
-     * @return bool
-     */
     protected function isTransactionalJob($command): bool
     {
-        return $this->currentTransaction && ($command instanceof RunAfterTransaction || !empty($command->afterTransactions));
+        return $this->transactionLevel && ($command instanceof RunAfterTransaction || !empty($command->afterTransactions));
     }
 
-    protected function addPendingJob($command): void
+    protected function addPendingCommand($command): void
     {
-        $this->currentTransaction->getValue()->push($this->cursor);
-        $this->pendingJobs[$this->cursor++] = $command;
+        $this->pendingCommands[$this->transactionLevel][] = $command;
     }
 }
