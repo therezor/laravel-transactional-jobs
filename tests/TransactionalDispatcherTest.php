@@ -75,6 +75,7 @@ class TransactionalDispatcherTest extends TestCase
         parent::setUp();
 
         $this->dispatcher = $this->app->make(TransactionalDispatcher::class);
+
         unset($_SERVER['_test_job_']);
     }
 
