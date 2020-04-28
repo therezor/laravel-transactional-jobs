@@ -13,7 +13,7 @@ _If you are on a PHP version below 7.1 or a Laravel version below 5.8 just use a
 
 1) Run ```composer require therezor/laravel-transactional-jobs``` in your laravel project root folder
 
-2) Implement `TheRezor\TransactionalJobs\Contracts\TransactionalJob` to jobs that run in the middle of database transactions
+2) Implement `TheRezor\TransactionalJobs\Contracts\RunAfterTransaction` to jobs that run in the middle of database transactions
 
 ```php
 <?php
