@@ -20,7 +20,7 @@ class TransactionalDispatcher extends Dispatcher
     public function commitTransaction(): void
     {
         $pendingCommands = $this->finishCurrentTransaction();
-        if (0 === $this->transactionLevel) {
+        if ($this->transactionLevel <= 0) {
             foreach ($pendingCommands as $command) {
                 parent::dispatchToQueue($command);
             }
@@ -41,7 +41,7 @@ class TransactionalDispatcher extends Dispatcher
 
     protected function finishCurrentTransaction(): array
     {
-        $pendingCommands = $this->pendingCommands[$this->transactionLevel];
+        $pendingCommands = $this->pendingCommands[$this->transactionLevel] ?? [];
 
         unset($this->pendingCommands[$this->transactionLevel]);
 

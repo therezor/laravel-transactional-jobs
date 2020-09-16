@@ -9,19 +9,23 @@ use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Bus\BusServiceProvider as LaravelProvider;
 use Illuminate\Contracts\Bus\Dispatcher as DispatcherContract;
 use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
 use Illuminate\Contracts\Bus\QueueingDispatcher as QueueingDispatcherContract;
 
 class BusServiceProvider extends ServiceProvider implements DeferrableProvider
 {
-       /**
+    /**
      * Register the service provider.
      *
      * @return void
      */
     public function register()
     {
+        // Register laravel service provider before package provider
+        $this->app->register(LaravelProvider::class);
+
         $this->app->singleton(TransactionalDispatcher::class, function ($app) {
             return new TransactionalDispatcher($app, function ($connection = null) use ($app) {
                 return $app[QueueFactoryContract::class]->connection($connection);

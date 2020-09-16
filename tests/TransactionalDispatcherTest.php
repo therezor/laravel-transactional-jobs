@@ -1,23 +1,18 @@
 <?php
 
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
 use Orchestra\Testbench\TestCase;
 use TheRezor\TransactionalJobs\BusServiceProvider;
 use TheRezor\TransactionalJobs\Contracts\RunAfterTransaction;
-use TheRezor\TransactionalJobs\TransactionalDispatcher;
 
 class TransactionalDispatcherTest extends TestCase
 {
-    /**
-     * @var TransactionalDispatcher
-     */
-    protected $dispatcher;
-
     public function test_dont_handle_job_out_of_transaction()
     {
-        $this->dispatcher->dispatch(new class {
+        $this->app->make(Dispatcher::class)->dispatch(new class {
             public function handle()
             {
                 $_SERVER['_test_job_'] = 'foo';
@@ -73,8 +68,6 @@ class TransactionalDispatcherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->dispatcher = $this->app->make(TransactionalDispatcher::class);
 
         unset($_SERVER['_test_job_']);
     }
