@@ -3,7 +3,6 @@
 namespace TheRezor\TransactionalJobs;
 
 use Illuminate\Bus\Dispatcher;
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
@@ -14,7 +13,7 @@ use Illuminate\Contracts\Bus\Dispatcher as DispatcherContract;
 use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
 use Illuminate\Contracts\Bus\QueueingDispatcher as QueueingDispatcherContract;
 
-class BusServiceProvider extends ServiceProvider implements DeferrableProvider
+class BusServiceProvider extends ServiceProvider
 {
     /**
      * Register the service provider.
@@ -58,21 +57,6 @@ class BusServiceProvider extends ServiceProvider implements DeferrableProvider
         Event::listen(TransactionRolledBack::class, function () {
             $this->app->make(TransactionalDispatcher::class)->rollbackTransaction();
         });
-    }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return [
-            Dispatcher::class,
-            TransactionalDispatcher::class,
-            DispatcherContract::class,
-            QueueingDispatcherContract::class,
-        ];
     }
 }
 
