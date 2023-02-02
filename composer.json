@@ -1,31 +1,31 @@
 {
-  "name": "therezor/laravel-transactional-jobs",
-  "description": "Submit laravel jobs inside transaction. Cancel job after rollback. Proceed after successful commit.",
-  "type": "library",
-  "license": "MIT",
-  "require": {
-    "php": "^7.1|^8.0",
-    "laravel/framework": "^5.8|^6.0|^7.0|^8.0|^9.0"
-  },
-  "authors": [
-    {
-      "name": "Roman Nagirnyi",
-      "email": "rnagirnyi@smartcats.pro"
+    "name": "therezor/laravel-transactional-jobs",
+    "description": "Submit laravel jobs inside transaction. Cancel job after rollback. Proceed after successful commit.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^7.1|^8.0",
+        "laravel/framework": "^5.8|^6.0|^7.0|^8.0|^9.0|^10.0"
+    },
+    "authors": [
+        {
+            "name": "Roman Nagirnyi",
+            "email": "rnagirnyi@smartcats.pro"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "TheRezor\\TransactionalJobs\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TheRezor\\TransactionalJobs\\BusServiceProvider"
+            ]
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^5.1|^8.0"
     }
-  ],
-  "autoload": {
-    "psr-4": {
-      "TheRezor\\TransactionalJobs\\": "src/"
-    }
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "TheRezor\\TransactionalJobs\\BusServiceProvider"
-      ]
-    }
-  },
-  "require-dev": {
-    "orchestra/testbench": "^5.1"
-  }
 }
