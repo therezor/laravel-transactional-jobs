@@ -1,4 +1,8 @@
 # Laravel transactional jobs
+
+> [!NOTE]  
+> Laravel 10 and newer versions natively support [transactional job handling](https://laravel.com/docs/events#dispatching-events-after-database-transactions) without the need for this package.
+
 #### Problem:
 ![](img/laravel_schema.jpeg)
 #### Solution:
